@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiting List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 90%;
+            width: 700px;
+        }
+        .input-field {
+            border-radius: 0.75rem;
+            border-width: 1px;
+            border-color: #d1d5db;
+            padding: 0.75rem;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .main-button {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .main-button:hover {
+            opacity: 0.9;
+        }
+        .text-link {
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="main-app" class="container-card p-6 md:p-8">
+
+        <!-- Public List View -->
+        <div id="public-list-view" class="space-y-6 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Our Waiting List</h1>
+            <p class="text-gray-600">See who has already joined. Your position is determined by when you sign up!</p>
+            
+            <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        </tr>
+                    </thead>
+                    <tbody id="public-list-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Public list rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="public-view-actions" class="space-y-2 mt-4">
+                <button id="show-form-btn" class="w-full bg-blue-500 text-white main-button">Join the List</button>
+                <div id="returning-user-actions" class="hidden">
+                     <p class="text-sm text-gray-500">Already on the list?</p>
+                     <button id="view-my-position-btn" class="w-full bg-green-500 text-white main-button">View My Position</button>
+                </div>
+            </div>
+            <button id="admin-login-btn" class="text-sm text-gray-500 mt-4 main-button bg-gray-200 hover:bg-gray-300 text-gray-800">Admin Login</button>
+        </div>
+
+        <!-- User Form View (hidden by default) -->
+        <div id="user-form-view" class="hidden space-y-6 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Enter Your Details</h1>
+            <p class="text-gray-600 mb-4">Just a few details to get you on the list.</p>
+            
+            <!-- Message Area for Errors -->
+            <div id="message-container" class="hidden text-sm p-3 rounded-xl transition-all duration-300"></div>
+
+            <form id="waiting-list-form" class="space-y-4">
+                <input type="text" id="name" placeholder="Your Name" class="input-field" required>
+                <input type="email" id="email" placeholder="Your Email Address" class="input-field" required>
+                <button type="submit" class="w-full bg-blue-500 text-white main-button">Join Now</button>
+            </form>
+            
+            <div id="user-position-display" class="hidden mt-6 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-4">
+                <p class="font-medium text-lg">You are currently in position <span id="user-position" class="font-bold text-2xl"></span> out of <span id="total-users" class="font-bold text-2xl"></span> on the list.</p>
+                <p class="mt-2 text-sm text-blue-700">Check back here anytime to see your updated position.</p>
+            </div>
+            
+            <button id="back-to-list-btn" class="text-sm text-gray-500 mt-4 underline hover:text-gray-700 text-link">Back to Waiting List</button>
+        </div>
+        
+        <!-- Admin Login View (hidden by default) -->
+        <div id="admin-login-view" class="hidden space-y-6 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Admin Login</h1>
+            <p class="text-gray-600 mb-4">Enter your password to access the dashboard.</p>
+            <div id="admin-login-message" class="hidden text-sm p-3 rounded-xl transition-all duration-300"></div>
+            
+            <form id="admin-login-form" class="space-y-4">
+                <input type="password" id="admin-password-input" placeholder="Password" class="input-field" required>
+                <button type="submit" class="w-full bg-blue-500 text-white main-button">Login</button>
+            </form>
+            <button id="back-from-login-btn" class="text-sm text-gray-500 mt-4 underline hover:text-gray-700 text-link">Cancel</button>
+        </div>
+
+
+        <!-- Admin View (hidden by default) -->
+        <div id="admin-view" class="hidden space-y-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 text-center">Admin Dashboard</h1>
+            <p class="text-gray-600 text-center">Manage the waiting list below.</p>
+
+            <div id="add-user-section" class="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+                <h2 id="add-user-header" class="text-xl font-semibold">Add New User</h2>
+                <div id="admin-message-container" class="hidden text-sm p-3 rounded-xl transition-all duration-300"></div>
+                <input type="text" id="admin-name" placeholder="Name" class="input-field">
+                <input type="email" id="admin-email" placeholder="Email" class="input-field">
+                <input type="number" id="admin-position" placeholder="Position (e.g., 1)" class="input-field">
+                <button id="add-admin-user-btn" class="w-full bg-green-500 text-white main-button" data-mode="add">Add to List</button>
+                <button id="cancel-replace-btn" class="w-full bg-gray-500 text-white main-button hidden">Cancel Replace</button>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="waiting-list-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Admin table rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-sm text-gray-500 text-center mt-4">
+                Note: On smaller screens, you may need to scroll right → to find the **Replace** and **Delete** buttons.
+            </p>
+
+            <button id="back-from-admin-btn" class="w-full bg-blue-500 text-white main-button">Back to Public List</button>
+        </div>
+        
+    </div>
+    
+    <!-- Custom Modal for Confirmation -->
+    <div id="confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-6 shadow-lg text-center max-w-sm w-full">
+            <p id="confirm-message" class="text-lg font-medium text-gray-800 mb-4"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-yes" class="bg-red-500 text-white main-button px-4 py-2">Yes</button>
+                <button id="confirm-no" class="bg-gray-300 text-gray-800 main-button px-4 py-2">No</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const USER_LIST_KEY = 'waitingList';
+        const CURRENT_USER_EMAIL_KEY = 'currentUserEmail';
+        const ADMIN_PASSWORD = '8z9X1c2V3b4N5m6L7'; // NOTE: For a real application, do NOT hardcode passwords.
+
+        // --- DOM Elements ---
+        const publicListView = document.getElementById('public-list-view');
+        const userFormView = document.getElementById('user-form-view');
+        const adminLoginView = document.getElementById('admin-login-view');
+        const adminView = document.getElementById('admin-view');
+        const publicListTableBody = document.getElementById('public-list-table-body');
+        const showFormBtn = document.getElementById('show-form-btn');
+        const waitingListForm = document.getElementById('waiting-list-form');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const userPositionDisplay = document.getElementById('user-position-display');
+        const userPositionSpan = document.getElementById('user-position');
+        const totalUsersSpan = document.getElementById('total-users');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const adminPasswordInput = document.getElementById('admin-password-input');
+        const adminLoginForm = document.getElementById('admin-login-form');
+        const backToListBtn = document.getElementById('back-to-list-btn');
+        const backFromAdminBtn = document.getElementById('back-from-admin-btn');
+        const backFromLoginBtn = document.getElementById('back-from-login-btn');
+        const viewMyPositionBtn = document.getElementById('view-my-position-btn');
+        const returningUserActions = document.getElementById('returning-user-actions');
+        const adminNameInput = document.getElementById('admin-name');
+        const adminEmailInput = document.getElementById('admin-email');
+        const adminPositionInput = document.getElementById('admin-position');
+        const addAdminUserBtn = document.getElementById('add-admin-user-btn');
+        const waitingListTableBody = document.getElementById('waiting-list-table-body');
+        const messageContainer = document.getElementById('message-container');
+        const adminLoginMessage = document.getElementById('admin-login-message');
+        const adminMessageContainer = document.getElementById('admin-message-container');
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmYesBtn = document.getElementById('confirm-yes');
+        const confirmNoBtn = document.getElementById('confirm-no');
+        const addUserHeader = document.getElementById('add-user-header');
+        const cancelReplaceBtn = document.getElementById('cancel-replace-btn');
+        
+        let confirmAction = null;
+
+        // --- Core Functions ---
+
+        /**
+         * Shows a message in a designated container.
+         * @param {HTMLElement} container - The container element to display the message in.
+         * @param {string} message - The message text.
+         * @param {string} type - 'success' or 'error'.
+         */
+        const showMessage = (container, message, type) => {
+            container.textContent = message;
+            container.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'bg-green-50', 'text-green-800');
+            if (type === 'error') {
+                container.classList.add('bg-red-50', 'text-red-800');
+            } else if (type === 'success') {
+                container.classList.add('bg-green-50', 'text-green-800');
+            }
+            container.classList.add('block');
+        };
+
+        /**
+         * Hides the message container after a delay.
+         * @param {HTMLElement} container - The container element to hide.
+         */
+        const hideMessage = (container) => {
+            setTimeout(() => {
+                container.classList.remove('block');
+                container.classList.add('hidden');
+            }, 3000);
+        };
+        
+        /**
+         * Shows a custom confirmation modal.
+         * @param {string} message - The message to display.
+         * @returns {Promise<boolean>} A promise that resolves with true for 'yes' and false for 'no'.
+         */
+        const showConfirmationModal = (message) => {
+            return new Promise((resolve) => {
+                confirmMessage.textContent = message;
+                confirmModal.classList.remove('hidden');
+                confirmModal.classList.add('flex');
+                
+                confirmYesBtn.onclick = () => {
+                    confirmModal.classList.add('hidden');
+                    confirmModal.classList.remove('flex');
+                    resolve(true);
+                };
+                
+                confirmNoBtn.onclick = () => {
+                    confirmModal.classList.add('hidden');
+                    confirmModal.classList.remove('flex');
+                    resolve(false);
+                };
+            });
+        };
+
+        /**
+         * Fetches the waiting list from local storage.
+         * @returns {Array} The array of user objects.
+         */
+        const getWaitingList = () => {
+            const list = localStorage.getItem(USER_LIST_KEY);
+            return list ? JSON.parse(list) : [];
+        };
+
+        /**
+         * Saves the waiting list to local storage.
+         * @param {Array} list - The array of user objects to save.
+         */
+        const saveWaitingList = (list) => {
+            localStorage.setItem(USER_LIST_KEY, JSON.stringify(list));
+        };
+
+        /**
+         * Renders the public list table.
+         */
+        const renderPublicList = () => {
+            const list = getWaitingList();
+            publicListTableBody.innerHTML = '';
+            if (list.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="3" class="py-4 text-center text-gray-500 italic">Be the first to join the waiting list!</td>`;
+                publicListTableBody.appendChild(row);
+            } else {
+                 list.forEach((user, index) => {
+                    const row = document.createElement('tr');
+                    row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+                    `;
+                    publicListTableBody.appendChild(row);
+                });
+            }
+        };
+
+        /**
+         * Renders the admin dashboard table.
+         */
+        const renderAdminTable = () => {
+            const list = getWaitingList();
+            waitingListTableBody.innerHTML = '';
+            if (list.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="4" class="py-4 text-center text-gray-500 italic">No users on the waiting list yet.</td>`;
+                waitingListTableBody.appendChild(row);
+                return;
+            }
+
+            list.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900 transition mr-2 replace-btn" data-index="${index}">Replace</button>
+                        <button class="text-red-600 hover:text-red-900 transition mr-2 delete-btn" data-email="${user.email}">Delete</button>
+                    </td>
+                `;
+                waitingListTableBody.appendChild(row);
+            });
+            // Add event listeners after rendering
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const emailToDelete = e.target.dataset.email;
+                    const confirmation = await showConfirmationModal(`Are you sure you want to delete ${emailToDelete}?`);
+                    if (confirmation) {
+                        deleteUser(emailToDelete);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.replace-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index, 10);
+                    const list = getWaitingList();
+                    const userToReplace = list[index];
+                    
+                    adminNameInput.value = userToReplace.name;
+                    adminEmailInput.value = userToReplace.email;
+                    adminPositionInput.value = index + 1; // Pre-fill position
+                    adminPositionInput.disabled = true;
+                    
+                    addUserHeader.textContent = 'Replace User';
+                    addAdminUserBtn.textContent = 'Replace User';
+                    addAdminUserBtn.dataset.mode = 'replace';
+                    cancelReplaceBtn.classList.remove('hidden');
+                });
+            });
+        };
+        
+        /**
+         * Calculates and displays the user's position on the list.
+         * @param {string} email - The email of the current user.
+         */
+        const showUserPosition = (email) => {
+            const list = getWaitingList();
+            const position = list.findIndex(user => user.email === email) + 1;
+            const total = list.length;
+            if (position > 0) {
+                userPositionSpan.textContent = position;
+                totalUsersSpan.textContent = total;
+                userPositionDisplay.classList.remove('hidden');
+                waitingListForm.classList.add('hidden');
+            } else {
+                userPositionDisplay.classList.add('hidden');
+                waitingListForm.classList.remove('hidden');
+            }
+        };
+
+        /**
+         * Deletes a user from the waiting list.
+         * @param {string} email - The email of the user to delete.
+         */
+        const deleteUser = (email) => {
+            let list = getWaitingList();
+            list = list.filter(user => user.email !== email);
+            saveWaitingList(list);
+            renderAdminTable();
+            renderPublicList();
+            showMessage(adminMessageContainer, 'User successfully deleted.', 'success');
+            hideMessage(adminMessageContainer);
+        };
+
+        /**
+         * Resets the admin form to 'add' mode.
+         */
+        const resetAdminForm = () => {
+            adminNameInput.value = '';
+            adminEmailInput.value = '';
+            adminPositionInput.value = '';
+            adminPositionInput.disabled = false;
+            addUserHeader.textContent = 'Add New User';
+            addAdminUserBtn.textContent = 'Add to List';
+            addAdminUserBtn.dataset.mode = 'add';
+            cancelReplaceBtn.classList.add('hidden');
+        };
+
+        // --- Event Handlers ---
+
+        showFormBtn.addEventListener('click', () => {
+            publicListView.classList.add('hidden');
+            userFormView.classList.remove('hidden');
+            showUserPosition(''); // Resets the user position view
+        });
+
+        backToListBtn.addEventListener('click', () => {
+            userFormView.classList.add('hidden');
+            publicListView.classList.remove('hidden');
+            renderPublicList();
+        });
+        
+        cancelReplaceBtn.addEventListener('click', () => {
+            resetAdminForm();
+        });
+
+        waitingListForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if (!name || !email) {
+                showMessage(messageContainer, 'Please enter both name and email.', 'error');
+                hideMessage(messageContainer);
+                return;
+            }
+
+            let list = getWaitingList();
+            if (list.some(user => user.email === email)) {
+                showMessage(messageContainer, 'This email is already on the waiting list.', 'error');
+                hideMessage(messageContainer);
+                return;
+            }
+
+            const newUser = { name, email, timestamp: Date.now() };
+            list.push(newUser);
+            saveWaitingList(list);
+            localStorage.setItem(CURRENT_USER_EMAIL_KEY, email);
+            
+            showMessage(messageContainer, 'You have successfully joined the waiting list!', 'success');
+            hideMessage(messageContainer);
+
+            nameInput.value = '';
+            emailInput.value = '';
+            showUserPosition(email);
+        });
+
+        adminLoginBtn.addEventListener('click', () => {
+            publicListView.classList.add('hidden');
+            adminLoginView.classList.remove('hidden');
+        });
+        
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const password = adminPasswordInput.value;
+            if (password === ADMIN_PASSWORD) {
+                adminLoginView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                renderAdminTable();
+            } else {
+                showMessage(adminLoginMessage, 'Incorrect password. Please try again.', 'error');
+                hideMessage(adminLoginMessage);
+            }
+        });
+
+        backFromLoginBtn.addEventListener('click', () => {
+            adminLoginView.classList.add('hidden');
+            publicListView.classList.remove('hidden');
+            renderPublicList();
+        });
+
+        backFromAdminBtn.addEventListener('click', () => {
+            adminView.classList.add('hidden');
+            publicListView.classList.remove('hidden');
+            renderPublicList();
+        });
+        
+        viewMyPositionBtn.addEventListener('click', () => {
+             const currentUserEmail = localStorage.getItem(CURRENT_USER_EMAIL_KEY);
+             if (currentUserEmail) {
+                 publicListView.classList.add('hidden');
+                 userFormView.classList.remove('hidden');
+                 showUserPosition(currentUserEmail);
+             } else {
+                 showUserPosition('');
+                 showMessage(messageContainer, 'You are not currently on the waiting list.', 'error');
+                 hideMessage(messageContainer);
+             }
+        });
+        
+        addAdminUserBtn.addEventListener('click', () => {
+            const name = adminNameInput.value.trim();
+            const email = adminEmailInput.value.trim();
+            const mode = addAdminUserBtn.dataset.mode;
+            
+            let list = getWaitingList();
+            
+            if (mode === 'add') {
+                const position = parseInt(adminPositionInput.value, 10);
+            
+                // Validation for add mode
+                if (!name || !email) {
+                    showMessage(adminMessageContainer, 'Please enter both name and email.', 'error');
+                    hideMessage(adminMessageContainer);
+                    return;
+                }
+                if (list.some(user => user.email === email)) {
+                    showMessage(adminMessageContainer, 'This email already exists on the list.', 'error');
+                    hideMessage(adminMessageContainer);
+                    return;
+                }
+                if (!position || isNaN(position) || position < 1 || position > list.length + 1) {
+                    showMessage(adminMessageContainer, `Please enter a valid position between 1 and ${list.length + 1}.`, 'error');
+                    hideMessage(adminMessageContainer);
+                    return;
+                }
+                const newUser = { name, email, timestamp: Date.now() };
+                list.splice(position - 1, 0, newUser); // Insert at specified position
+                showMessage(adminMessageContainer, `User successfully added at position ${position}.`, 'success');
+
+            } else if (mode === 'replace') {
+                const position = parseInt(adminPositionInput.value, 10);
+                
+                // Validation for replace mode
+                if (!name || !email) {
+                     showMessage(adminMessageContainer, 'Please enter both name and email.', 'error');
+                     hideMessage(adminMessageContainer);
+                     return;
+                }
+                // Don't check for existing email since we are replacing, but make sure the new email isn't a duplicate of someone else's.
+                if (list.some((user, index) => user.email === email && index !== position - 1)) {
+                     showMessage(adminMessageContainer, 'This email already exists for another user on the list.', 'error');
+                     hideMessage(adminMessageContainer);
+                     return;
+                }
+                
+                const updatedUser = { name, email, timestamp: Date.now() };
+                list[position - 1] = updatedUser; // Replace the user at the specified position
+                showMessage(adminMessageContainer, `User at position ${position} successfully replaced.`, 'success');
+            }
+
+            saveWaitingList(list);
+            renderAdminTable();
+            renderPublicList();
+            resetAdminForm();
+            hideMessage(adminMessageContainer);
+        });
+
+        // --- Initial Load ---
+        window.addEventListener('load', () => {
+            renderPublicList();
+            const currentUserEmail = localStorage.getItem(CURRENT_USER_EMAIL_KEY);
+            if (currentUserEmail) {
+                returningUserActions.classList.remove('hidden');
+            } else {
+                returningUserActions.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
